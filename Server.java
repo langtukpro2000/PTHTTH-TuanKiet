@@ -1,33 +1,47 @@
-package Socket;
-import java.io.BufferedInputStream;
-import java.io.BufferedReader;
-import java.io.FileReader;
+package LAB4;
 import java.io.IOException;
-import java.io.PrintStream;
+import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.ArrayList;
 import java.util.Scanner;
-public class Server {
-public static void main(String[] args) {
 
-try {
-	ServerSocket server = new ServerSocket(9571);
-	System.out.println("Server da duoc tao");
-	Socket client = server.accept();
-	System.out.println("Client da ket noi den server");
-	Scanner inFromClient = new Scanner(client.getInputStream());
-	PrintStream outToClient = new PrintStream(client.getOutputStream());
-	outToClient.println("Hello, What is your favourite?");
-	String name = inFromClient.nextLine();
-	System.out.println("client: " + name);
-	BufferedReader br= new BufferedReader(new FileReader("D:\\favourite.txt"));
-	String tep=br.readLine();
-	if(tep.contains(name))
-		outToClient.println("I found " + name);
-	else
-		outToClient.println("Sorry, I can't find " + name);
-	} catch (IOException e) {
-		e.printStackTrace();
-}
-}
+public class Server {
+  private static String message="";
+  public static void main(String[] args) {
+    try {
+      final ServerSocket svr=new ServerSocket(7235);
+      System.out.println("Chatroom server is starting...");
+      System.out.println("Say something...");
+      final ArrayList<Socket>listSoc=new ArrayList<Socket>();
+      while(true) { 
+        final Socket soc=svr.accept();
+        listSoc.add(soc);
+        System.out.println("number of client is "+listSoc.size());
+        new Thread(new Runnable() {
+          @Override
+          public void run() {
+            try {
+              Scanner in=new Scanner(soc.getInputStream());
+              while(in.hasNextLine()) {
+                message=in.nextLine();
+                for(Socket s:listSoc) {
+                  if(s==null) 
+                    listSoc.remove(s);
+                  else if(!s.equals(soc)){
+                    PrintWriter out=new PrintWriter(s.getOutputStream(),true);
+                    out.println(message);
+                  }
+                }
+              }
+            } catch (IOException e) {
+              e.printStackTrace();
+            }
+          }
+        }).start();
+      }
+    } catch (Exception e) {
+      e.printStackTrace();
+    }
+  }
 }
